@@ -1,16 +1,22 @@
 /**
  * Main Application Component
- * 
+ *
  * Serves as the root component for the TaskFlow application, handling routing,
  * authentication protection, and layout structure. Implements a comprehensive
  * routing system with protected routes and role-based access control.
- * 
+ *
  * @author Senior Full-Stack Engineer
  * @version 1.0.0
  */
 
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 
 // Layout Components
@@ -48,10 +54,10 @@ import NotificationProvider from "./contexts/NotificationContext";
 
 /**
  * Protected Route Component
- * 
+ *
  * Higher-order component that protects routes requiring authentication.
  * Redirects unauthenticated users to the login page with return path.
- * 
+ *
  * @param {Object} props - Component props
  * @param {React.ReactNode} props.children - Child components to render when authenticated
  * @param {string} [props.requiredRole] - Optional role required to access the route
@@ -59,48 +65,67 @@ import NotificationProvider from "./contexts/NotificationContext";
 const ProtectedRoute = ({ children, requiredRole }) => {
   const { user, hasRole } = useAuth();
   const location = useLocation();
-  
+
   // Check if user is authenticated
   const isAuthenticated = !!user || !!localStorage.getItem("token");
-  
+
   // If not authenticated, redirect to login
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
-  
+
   // If role is required, check if user has the role
   if (requiredRole) {
     const hasRequiredRole = hasRole(requiredRole);
-    
+
     if (!hasRequiredRole) {
       // Redirect to appropriate dashboard based on user's role
       const userRole = localStorage.getItem("userRole");
-      const redirectPath = userRole === "admin" ? "/admin/dashboard" : "/user/dashboard";
-      
+      const redirectPath =
+        userRole === "admin" ? "/admin/dashboard" : "/user/dashboard";
+
       return <Navigate to={redirectPath} replace />;
     }
   }
-  
   // User is authenticated and has required role (if specified)
   return children;
 };
 
+const RootRouteHandler = () => {
+  const { user } = useAuth();
+
+  // Check if user is authenticated
+  const isAuthenticated = !!user || !!localStorage.getItem("token");
+
+  if (isAuthenticated) {
+    // User is authenticated, redirect to appropriate dashboard
+    const userRole = localStorage.getItem("userRole");
+    const redirectPath =
+      userRole === "admin" ? "/admin/dashboard" : "/user/dashboard";
+    return <Navigate to={redirectPath} replace />;
+  } else {
+    // User is not authenticated, redirect to login
+    return <Navigate to="/login" replace />;
+  }
+};
+
 /**
  * Root Route Handler Component
- * 
+ *
  * Handles the root route ("/") by checking authentication status
  * and redirecting appropriately.
  */
 const RootRouteHandler = () => {
   const { user } = useAuth();
-  
+
   // Check if user is authenticated
   const isAuthenticated = !!user || !!localStorage.getItem("token");
-  
+
   if (isAuthenticated) {
     // User is authenticated, redirect to appropriate dashboard
     const userRole = localStorage.getItem("userRole");
-    const redirectPath = userRole === "admin" ? "/admin/dashboard" : "/user/dashboard";
+    const redirectPath =
+      userRole === "admin" ? "/admin/dashboard" : "/user/dashboard";
     return <Navigate to={redirectPath} replace />;
   } else {
     // User is not authenticated, redirect to login
@@ -109,7 +134,7 @@ const RootRouteHandler = () => {
 };
 /**
  * Main App Component
- * 
+ *
  * Defines the application's routing structure and wraps the app with necessary providers.
  */
 function App() {
@@ -119,132 +144,132 @@ function App() {
         <Router>
           <div className="flex flex-col min-h-screen">
             <Navbar />
-            
+
             <main className="flex-grow">
               <Routes>
                 {/* Root Route - Redirect based on authentication */}
                 <Route path="/" element={<RootRouteHandler />} />
-                
+
                 {/* Public Routes */}
                 <Route path="/landing" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
-                
+
                 {/* Protected Admin Routes */}
-                <Route 
-                  path="/admin/dashboard" 
+                <Route
+                  path="/admin/dashboard"
                   element={
                     <ProtectedRoute requiredRole="admin">
                       <Dashboard />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/users" 
+                <Route
+                  path="/admin/users"
                   element={
                     <ProtectedRoute requiredRole="admin">
                       <Users />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/manage-users" 
+                <Route
+                  path="/admin/manage-users"
                   element={
                     <ProtectedRoute requiredRole="admin">
                       <ManageUsers />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/manage-tasks" 
+                <Route
+                  path="/admin/manage-tasks"
                   element={
                     <ProtectedRoute requiredRole="admin">
                       <ManageTasks />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/settings" 
+                <Route
+                  path="/admin/settings"
                   element={
                     <ProtectedRoute requiredRole="admin">
                       <Settings />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/user-logs" 
+                <Route
+                  path="/admin/user-logs"
                   element={
                     <ProtectedRoute requiredRole="admin">
                       <UserLogPage />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin/task-filter" 
+                <Route
+                  path="/admin/task-filter"
                   element={
                     <ProtectedRoute requiredRole="admin">
                       <TaskFilter />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                
+
                 {/* Protected User Routes */}
-                <Route 
-                  path="/user/dashboard" 
+                <Route
+                  path="/user/dashboard"
                   element={
                     <ProtectedRoute>
                       <UserDashboard />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/user/userpage" 
+                <Route
+                  path="/user/userpage"
                   element={
                     <ProtectedRoute>
                       <UserPage />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/user/notifications" 
+                <Route
+                  path="/user/notifications"
                   element={
                     <ProtectedRoute>
                       <NotificationsPage />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/user/calendar" 
+                <Route
+                  path="/user/calendar"
                   element={
                     <ProtectedRoute>
                       <CalendarPage />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/user/profile" 
+                <Route
+                  path="/user/profile"
                   element={
                     <ProtectedRoute>
                       <ProfilePage />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/user/task-filter" 
+                <Route
+                  path="/user/task-filter"
                   element={
                     <ProtectedRoute>
                       <TaskFilter />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                
-                {/* Fallback Route - Redirect to login */}
-                <Route path="*" element={<Navigate to="/login" replace />} />
+
+                {/* Fallback Route - Redirect to landing page */}
+                <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </main>
-            
+
             <Footer />
           </div>
         </Router>
