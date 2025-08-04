@@ -91,24 +91,6 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   return children;
 };
 
-const RootRouteHandler = () => {
-  const { user } = useAuth();
-
-  // Check if user is authenticated
-  const isAuthenticated = !!user || !!localStorage.getItem("token");
-
-  if (isAuthenticated) {
-    // User is authenticated, redirect to appropriate dashboard
-    const userRole = localStorage.getItem("userRole");
-    const redirectPath =
-      userRole === "admin" ? "/admin/dashboard" : "/user/dashboard";
-    return <Navigate to={redirectPath} replace />;
-  } else {
-    // User is not authenticated, redirect to login
-    return <Navigate to="/login" replace />;
-  }
-};
-
 /**
  * Root Route Handler Component
  *
