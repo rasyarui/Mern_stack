@@ -86,6 +86,28 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 };
 
 /**
+ * Root Route Handler Component
+ * 
+ * Handles the root route ("/") by checking authentication status
+ * and redirecting appropriately.
+ */
+const RootRouteHandler = () => {
+  const { user } = useAuth();
+  
+  // Check if user is authenticated
+  const isAuthenticated = !!user || !!localStorage.getItem("token");
+  
+  if (isAuthenticated) {
+    // User is authenticated, redirect to appropriate dashboard
+    const userRole = localStorage.getItem("userRole");
+    const redirectPath = userRole === "admin" ? "/admin/dashboard" : "/user/dashboard";
+    return <Navigate to={redirectPath} replace />;
+  } else {
+    // User is not authenticated, redirect to login
+    return <Navigate to="/login" replace />;
+  }
+};
+/**
  * Main App Component
  * 
  * Defines the application's routing structure and wraps the app with necessary providers.
@@ -100,8 +122,11 @@ function App() {
             
             <main className="flex-grow">
               <Routes>
+                {/* Root Route - Redirect based on authentication */}
+                <Route path="/" element={<RootRouteHandler />} />
+                
                 {/* Public Routes */}
-                <Route path="/" element={<Landing />} />
+                <Route path="/landing" element={<Landing />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -215,8 +240,8 @@ function App() {
                   } 
                 />
                 
-                {/* Fallback Route - Redirect to landing page */}
-                <Route path="*" element={<Navigate to="/" replace />} />
+                {/* Fallback Route - Redirect to login */}
+                <Route path="*" element={<Navigate to="/login" replace />} />
               </Routes>
             </main>
             

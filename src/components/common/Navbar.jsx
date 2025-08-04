@@ -8,7 +8,7 @@ const Navbar = () => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const hideProfileRoutes = ["/", "/login", "/signup"];
+  const hideProfileRoutes = ["/landing", "/login", "/signup", "/forgot-password", "/reset-password"];
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [taskListOpen, setTaskListOpen] = useState(false);
@@ -16,6 +16,8 @@ const Navbar = () => {
   const taskListRef = useRef(null);
   const [profile, setProfile] = useState({ name: "User", profilePic: "", role: "user" });
 
+  // Check if user is authenticated
+  const isAuthenticated = !!localStorage.getItem("token");
   useEffect(() => {
     // Check if user is in admin or user portal
     const isAdminPortal = location.pathname.startsWith("/admin");
@@ -57,7 +59,7 @@ const Navbar = () => {
       // Remove the correct profile from storage
       localStorage.removeItem(isAdminPortal ? "adminProfile" : "userProfile");
 
-      navigate("/");
+      navigate("/login");
     } catch (err) {
       console.error("Logout failed:", err);
     }
@@ -66,6 +68,11 @@ const Navbar = () => {
   const handleLogoClick = (e) => {
     e.preventDefault();
 
+    // If not authenticated, redirect to login
+    if (!isAuthenticated) {
+      navigate("/login");
+      return;
+    }
     setTimeout(() => {
       const isAdminPortal = location.pathname.startsWith("/admin");
 
@@ -89,7 +96,7 @@ const Navbar = () => {
     <nav className="bg-blue-600 text-white px-5 py-4 flex justify-between items-center shadow-lg">
       {/* Logo with Image & Text */}
       <Link
-        to="/"
+        to={isAuthenticated ? (location.pathname.startsWith("/admin") ? "/admin/dashboard" : "/user/dashboard") : "/login"}
         onClick={handleLogoClick}
         className="flex items-center text-3xl font-bold tracking-wide hover:opacity-70 transition"
       >
@@ -99,7 +106,7 @@ const Navbar = () => {
 
       <div className="flex items-center gap-4">
         {/* Task List Button (Hidden on Landing/Login/Signup) */}
-        {!hideProfileRoutes.includes(location.pathname) && (
+        {isAuthenticated && !hideProfileRoutes.includes(location.pathname) && (
           <div className="relative" ref={taskListRef}>
             <button
               onClick={() => setTaskListOpen(!taskListOpen)}
@@ -120,7 +127,7 @@ const Navbar = () => {
         )}
 
         {/* Profile Button (Hidden on Landing/Login/Signup) */}
-        {!hideProfileRoutes.includes(location.pathname) && (
+        {isAuthenticated && !hideProfileRoutes.includes(location.pathname) && (
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
