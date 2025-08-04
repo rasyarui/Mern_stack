@@ -50,7 +50,7 @@ const UserDashboard = () => {
     };
     setTasks(categorizedTasks);
     checkDeadlines(storedTasks);
-  }, [searchQuery, completionStatus]);
+  }, [searchQuery, completionStatus,]);
 
   useEffect(() => {
     localStorage.setItem("notes", notes);

@@ -16,8 +16,10 @@
  * @version 1.0.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FaTrash, FaSpinner, FaExclamationTriangle, FaUserShield, FaSort, FaFilter } from 'react-icons/fa';
+import api from '../../utils/api';
+import { useAuth } from '../../contexts/AuthContext';
 
 const UserLogPage = () => {
   // State management with proper initialization
@@ -33,80 +35,29 @@ const UserLogPage = () => {
     role: 'all',
     search: ''
   });
+  const { user } = useAuth();
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  /**
-   * Load user logs from localStorage
-   */
-  useEffect(() => {
-    const loadLogs = async () => {
-      try {
-        // Simulate network delay for realistic UX
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Get logs from localStorage or initialize with mock data
-        const storedLogs = localStorage.getItem('userLogs');
-        
-        if (storedLogs) {
-          const parsedLogs = JSON.parse(storedLogs);
-          setLogs(parsedLogs);
-          setFilteredLogs(parsedLogs);
-        } else {
-          // Initialize with mock data if no logs exist
-          const mockLogs = [
-            {
-              id: '1',
-              userId: 'admin-123',
-              username: 'admin@example.com',
-              role: 'admin',
-              action: 'login',
-              loginTime: new Date(Date.now() - 3600000).toISOString(),
-              logoutTime: null,
-              ipAddress: '192.168.1.1',
-              tokenName: 'eyJhbGciOi...'
-            },
-            {
-              id: '2',
-              userId: 'user-456',
-              username: 'user@example.com',
-              role: 'user',
-              action: 'login',
-              loginTime: new Date(Date.now() - 7200000).toISOString(),
-              logoutTime: new Date(Date.now() - 3600000).toISOString(),
-              ipAddress: '192.168.1.2',
-              tokenName: 'eyJhbGciOi...'
-            },
-            {
-              id: '3',
-              userId: 'user-789',
-              username: 'test@example.com',
-              role: 'user',
-              action: 'login',
-              loginTime: new Date(Date.now() - 86400000).toISOString(),
-              logoutTime: new Date(Date.now() - 82800000).toISOString(),
-              ipAddress: '192.168.1.3',
-              tokenName: 'eyJhbGciOi...'
-            }
-          ];
-          
-          // Store mock logs in localStorage
-          localStorage.setItem('userLogs', JSON.stringify(mockLogs));
-          
-          setLogs(mockLogs);
-          setFilteredLogs(mockLogs);
-        }
-        
-        setError(null);
-      } catch (err) {
-        console.error('Error loading user logs:', err);
-        setError('Failed to load user logs. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const loadLogs = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/admin/logs', {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      setLogs(response.data);
+      setFilteredLogs(response.data);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading user logs:', err);
+      setError('Failed to load user logs. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  }, [user.token]);
 
+  useEffect(() => {
     loadLogs();
-  }, []);
+  }, [loadLogs]);
 
   /**
    * Apply sorting to logs
@@ -216,25 +167,30 @@ const UserLogPage = () => {
    * 
    * @param {string} logId - ID of the log to delete
    */
-  const handleDelete = (logId) => {
+  const handleDelete = async (logId) => {
     // If not confirming, show confirmation first
     if (deleteConfirm !== logId) {
       setDeleteConfirm(logId);
       return;
     }
-    
-    // User confirmed deletion
-    const updatedLogs = logs.filter(log => log.id !== logId);
-    
-    // Update state
-    setLogs(updatedLogs);
-    setFilteredLogs(filteredLogs.filter(log => log.id !== logId));
-    
-    // Update localStorage
-    localStorage.setItem('userLogs', JSON.stringify(updatedLogs));
-    
-    // Reset confirmation state
-    setDeleteConfirm(null);
+
+    try {
+      await api.delete(`/admin/logs/${logId}`, {
+        headers: { Authorization: `Bearer ${user.token}` },
+      });
+      // User confirmed deletion
+      const updatedLogs = logs.filter(log => log._id !== logId);
+      
+      // Update state
+      setLogs(updatedLogs);
+      setFilteredLogs(filteredLogs.filter(log => log._id !== logId));
+      
+      // Reset confirmation state
+      setDeleteConfirm(null);
+    } catch (err) {
+        console.error('Error deleting user log:', err);
+        setError('Failed to delete user log. Please try again later.');
+    }
   };
 
   /**
@@ -386,7 +342,7 @@ const UserLogPage = () => {
               </tr>
             ) : (
               filteredLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-gray-50">
+                <tr key={log._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{log.username}</div>
                     <div className="text-xs text-gray-500">{log.userId}</div>
