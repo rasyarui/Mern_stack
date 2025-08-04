@@ -19,6 +19,8 @@ const UserDashboard = () => {
 
   const [notes, setNotes] = useState(localStorage.getItem("notes") || "");
   const audioRef = useRef(new Audio(notificationSound));
+  const [searchQuery, setSearchQuery] = useState("");
+  const [completionStatus, setCompletionStatus] = useState("all");
 
   // 🔹 Ensure page starts from top when component loads
   useEffect(() => {
@@ -27,14 +29,28 @@ const UserDashboard = () => {
 
   useEffect(() => {
     const storedTasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+    const filteredTasks = storedTasks.filter(task => {
+      const searchMatch = task.title.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      if (completionStatus === 'all') {
+        return searchMatch;
+      } else if (completionStatus === 'completed') {
+        return searchMatch && task.progress > 80;
+      } else if (completionStatus === 'incomplete') {
+        return searchMatch && task.progress <= 80;
+      }
+      return searchMatch;
+    });
+
     const categorizedTasks = {
-      "To Do": storedTasks.filter((task) => task.progress <= 40),
-      "In Progress": storedTasks.filter((task) => task.progress > 40 && task.progress <= 80),
-      Completed: storedTasks.filter((task) => task.progress > 80),
+      "To Do": filteredTasks.filter((task) => task.progress <= 40),
+      "In Progress": filteredTasks.filter((task) => task.progress > 40 && task.progress <= 80),
+      Completed: filteredTasks.filter((task) => task.progress > 80),
     };
     setTasks(categorizedTasks);
     checkDeadlines(storedTasks);
-  }, []);
+  }, [searchQuery, completionStatus]);
 
   useEffect(() => {
     localStorage.setItem("notes", notes);
@@ -113,6 +129,33 @@ const UserDashboard = () => {
           🚀 User Dashboard
         </h2>
         <ToastContainer position="top-right" autoClose={5000} hideProgressBar />
+
+        {/* Filter and Search Section */}
+        <div className="mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="relative w-full sm:w-1/2">
+            <input
+              type="text"
+              placeholder="Search tasks by title..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full p-3 pl-10 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            />
+            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="relative w-full sm:w-1/2">
+            <select
+              value={completionStatus}
+              onChange={(e) => setCompletionStatus(e.target.value)}
+              className="w-full p-3 border rounded-lg shadow-sm appearance-none focus:ring-2 focus:ring-blue-400 focus:outline-none"
+            >
+              <option value="all">All Tasks</option>
+              <option value="incomplete">Incomplete</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+        </div>
 
         {/* Kanban Board */}
         <div className="glassmorphism p-4 rounded-xl shadow-lg bg-gradient-to-br from-white/30 to-white/10 backdrop-blur-lg border border-white/20">
